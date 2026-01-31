@@ -11,11 +11,11 @@ const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Interview Prep Pro - Master Your Technical Interview',
+  title: 'Interview Prep - Master Your Technical Interview',
   description: 'Production-grade interview preparation platform for SDE roles with comprehensive DSA problems, patterns, company prep, and more.',
   generator: 'v0.app',
   keywords: ['interview prep', 'DSA', 'algorithms', 'data structures', 'leetcode', 'coding interview'],
-  authors: [{ name: 'Interview Prep Pro' }],
+  authors: [{ name: 'Interview Prep' }],
 };
 
 export default function RootLayout({

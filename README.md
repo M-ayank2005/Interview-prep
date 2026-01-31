@@ -1,4 +1,4 @@
-# Interview Prep Pro
+# Interview Prep
 
 A production-grade interview preparation platform for SDE roles. Built with Next.js 16, React 19, Node.js/Express, and MongoDB.
 

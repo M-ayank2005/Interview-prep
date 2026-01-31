@@ -1,8 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Copy, Check, CheckCircle2, Circle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface Pattern {
   name: string;
@@ -496,6 +497,25 @@ function CodeBlock({ code }: { code: string }) {
 }
 
 export default function PatternsPage() {
+  const [masteredPatterns, setMasteredPatterns] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem('masteredPatterns');
+    if (saved) setMasteredPatterns(JSON.parse(saved));
+  }, []);
+
+  const toggleMastered = (patternName: string) => {
+    const newMastered = masteredPatterns.includes(patternName)
+      ? masteredPatterns.filter(p => p !== patternName)
+      : [...masteredPatterns, patternName];
+    setMasteredPatterns(newMastered);
+    localStorage.setItem('masteredPatterns', JSON.stringify(newMastered));
+  };
+
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -508,10 +528,24 @@ export default function PatternsPage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="space-y-6">
           {patterns.map((pattern, idx) => (
-            <Card key={idx}>
+            <Card key={idx} className={masteredPatterns.includes(pattern.name) ? 'border-green-500/50 bg-green-500/5' : ''}>
               <CardHeader>
-                <CardTitle className="text-xl">{pattern.name}</CardTitle>
-                <CardDescription>{pattern.description}</CardDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                       {pattern.name}
+                       {masteredPatterns.includes(pattern.name) && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                    </CardTitle>
+                    <CardDescription>{pattern.description}</CardDescription>
+                  </div>
+                  <Button
+                    variant={masteredPatterns.includes(pattern.name) ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => toggleMastered(pattern.name)}
+                  >
+                    {masteredPatterns.includes(pattern.name) ? 'Mastered' : 'Mark as Mastered'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>

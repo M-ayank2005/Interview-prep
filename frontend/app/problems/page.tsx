@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CheckCircle2, Circle, ExternalLink, Search, Filter,
   ChevronDown, ChevronUp, Bookmark, Clock, Star,
-  TrendingUp, BarChart3, Flame
+  TrendingUp, BarChart3, Flame, Zap, Target
 } from 'lucide-react';
 import {
   Select,
@@ -24,15 +26,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-
-interface Problem {
-  name: string;
-  category: string;
-  url: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  companies?: string[];
-  patterns?: string[];
-}
+import { 
+  PROBLEMS as ALL_PROBLEMS, 
+  Problem,
+  CATEGORIES, 
+  COMPANIES,
+  getBlind75Problems,
+  getNeetCode150Problems,
+  getFaangFavoriteProblems 
+} from '@/lib/problems-data';
 
 interface SolvedStatus {
   solved: boolean;
@@ -42,89 +44,6 @@ interface SolvedStatus {
   attempts?: number;
 }
 
-const PROBLEMS: Problem[] = [
-  // Arrays & Hashing
-  { name: 'Two Sum', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/two-sum/', difficulty: 'Easy', companies: ['Google', 'Amazon', 'Microsoft', 'Facebook', 'Uber'], patterns: ['Hash Map'] },
-  { name: 'Contains Duplicate', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/contains-duplicate/', difficulty: 'Easy', companies: ['Amazon', 'Microsoft'], patterns: ['Hash Set'] },
-  { name: 'Product of Array Except Self', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/product-of-array-except-self/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Uber'], patterns: ['Prefix Sum'] },
-  { name: 'Maximum Subarray (Kadane)', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/maximum-subarray/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Uber'], patterns: ['Dynamic Programming'] },
-  { name: 'Best Time to Buy and Sell Stock', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/best-time-to-buy-and-sell-stock/', difficulty: 'Easy', companies: ['Amazon', 'Facebook', 'Uber'], patterns: ['One Pass'] },
-  { name: 'Subarray Sum Equals K', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/subarray-sum-equals-k/', difficulty: 'Medium', companies: ['Facebook', 'Google', 'Amazon'], patterns: ['Prefix Sum', 'Hash Map'] },
-  { name: 'Longest Consecutive Sequence', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/longest-consecutive-sequence/', difficulty: 'Medium', companies: ['Google', 'Amazon', 'Microsoft'], patterns: ['Hash Set'] },
-  { name: 'Merge Intervals', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/merge-intervals/', difficulty: 'Medium', companies: ['Google', 'Facebook', 'Amazon', 'Uber'], patterns: ['Interval Merging'] },
-  { name: 'Set Matrix Zeroes', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/set-matrix-zeroes/', difficulty: 'Medium', companies: ['Microsoft', 'Amazon'], patterns: ['In-place'] },
-
-  // Two Pointers
-  { name: 'Valid Palindrome', category: 'Two Pointers', url: 'https://leetcode.com/problems/valid-palindrome/', difficulty: 'Easy', companies: ['Facebook', 'Microsoft'], patterns: ['Two Pointers'] },
-  { name: 'Container With Most Water', category: 'Two Pointers', url: 'https://leetcode.com/problems/container-with-most-water/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Google'], patterns: ['Two Pointers'] },
-  { name: '3Sum', category: 'Two Pointers', url: 'https://leetcode.com/problems/3sum/', difficulty: 'Medium', companies: ['Facebook', 'Amazon', 'Microsoft', 'Uber'], patterns: ['Two Pointers', 'Sorting'] },
-  { name: 'Trapping Rain Water', category: 'Two Pointers', url: 'https://leetcode.com/problems/trapping-rain-water/', difficulty: 'Hard', companies: ['Amazon', 'Facebook', 'Google', 'Uber'], patterns: ['Two Pointers', 'DP'] },
-  { name: 'Sort Colors', category: 'Two Pointers', url: 'https://leetcode.com/problems/sort-colors/', difficulty: 'Medium', companies: ['Microsoft', 'Amazon'], patterns: ['Dutch National Flag'] },
-
-  // Sliding Window
-  { name: 'Longest Substring Without Repeating Characters', category: 'Sliding Window', url: 'https://leetcode.com/problems/longest-substring-without-repeating-characters/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft', 'Uber'], patterns: ['Sliding Window'] },
-  { name: 'Minimum Window Substring', category: 'Sliding Window', url: 'https://leetcode.com/problems/minimum-window-substring/', difficulty: 'Hard', companies: ['Facebook', 'Amazon', 'Microsoft', 'Uber'], patterns: ['Sliding Window'] },
-  { name: 'Permutation in String', category: 'Sliding Window', url: 'https://leetcode.com/problems/permutation-in-string/', difficulty: 'Medium', companies: ['Microsoft', 'Amazon'], patterns: ['Sliding Window'] },
-  { name: 'Sliding Window Maximum', category: 'Sliding Window', url: 'https://leetcode.com/problems/sliding-window-maximum/', difficulty: 'Hard', companies: ['Amazon', 'Google', 'Uber'], patterns: ['Monotonic Deque'] },
-
-  // Binary Search
-  { name: 'Binary Search', category: 'Binary Search', url: 'https://leetcode.com/problems/binary-search/', difficulty: 'Easy', companies: ['Microsoft', 'Amazon'], patterns: ['Binary Search'] },
-  { name: 'Search in Rotated Sorted Array', category: 'Binary Search', url: 'https://leetcode.com/problems/search-in-rotated-sorted-array/', difficulty: 'Medium', companies: ['Facebook', 'Amazon', 'Microsoft', 'Uber'], patterns: ['Modified Binary Search'] },
-  { name: 'Find Minimum in Rotated Sorted Array', category: 'Binary Search', url: 'https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Facebook'], patterns: ['Binary Search'] },
-  { name: 'Median of Two Sorted Arrays', category: 'Binary Search', url: 'https://leetcode.com/problems/median-of-two-sorted-arrays/', difficulty: 'Hard', companies: ['Amazon', 'Google', 'Microsoft'], patterns: ['Binary Search'] },
-
-  // Stack
-  { name: 'Valid Parentheses', category: 'Stack', url: 'https://leetcode.com/problems/valid-parentheses/', difficulty: 'Easy', companies: ['Amazon', 'Facebook', 'Microsoft', 'Google'], patterns: ['Stack'] },
-  { name: 'Daily Temperatures', category: 'Stack', url: 'https://leetcode.com/problems/daily-temperatures/', difficulty: 'Medium', companies: ['Facebook', 'Amazon'], patterns: ['Monotonic Stack'] },
-  { name: 'Largest Rectangle in Histogram', category: 'Stack', url: 'https://leetcode.com/problems/largest-rectangle-in-histogram/', difficulty: 'Hard', companies: ['Amazon', 'Google', 'Facebook'], patterns: ['Monotonic Stack'] },
-  { name: 'Min Stack', category: 'Stack', url: 'https://leetcode.com/problems/min-stack/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Google'], patterns: ['Stack Design'] },
-
-  // Trees
-  { name: 'Maximum Depth of Binary Tree', category: 'Trees', url: 'https://leetcode.com/problems/maximum-depth-of-binary-tree/', difficulty: 'Easy', companies: ['Amazon', 'Microsoft'], patterns: ['DFS'] },
-  { name: 'Diameter of Binary Tree', category: 'Trees', url: 'https://leetcode.com/problems/diameter-of-binary-tree/', difficulty: 'Easy', companies: ['Facebook', 'Amazon', 'Google'], patterns: ['DFS'] },
-  { name: 'Binary Tree Level Order Traversal', category: 'Trees', url: 'https://leetcode.com/problems/binary-tree-level-order-traversal/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft'], patterns: ['BFS'] },
-  { name: 'Validate Binary Search Tree', category: 'Trees', url: 'https://leetcode.com/problems/validate-binary-search-tree/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft'], patterns: ['DFS', 'Inorder'] },
-  { name: 'Serialize and Deserialize Binary Tree', category: 'Trees', url: 'https://leetcode.com/problems/serialize-and-deserialize-binary-tree/', difficulty: 'Hard', companies: ['Facebook', 'Amazon', 'Microsoft', 'Uber'], patterns: ['Tree Serialization'] },
-
-  // Graphs
-  { name: 'Number of Islands', category: 'Graphs', url: 'https://leetcode.com/problems/number-of-islands/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft', 'Google', 'Uber'], patterns: ['DFS', 'BFS'] },
-  { name: 'Clone Graph', category: 'Graphs', url: 'https://leetcode.com/problems/clone-graph/', difficulty: 'Medium', companies: ['Facebook', 'Amazon', 'Microsoft'], patterns: ['DFS', 'Hash Map'] },
-  { name: 'Course Schedule', category: 'Graphs', url: 'https://leetcode.com/problems/course-schedule/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft', 'Google'], patterns: ['Topological Sort'] },
-  { name: 'Rotting Oranges', category: 'Graphs', url: 'https://leetcode.com/problems/rotting-oranges/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft'], patterns: ['BFS'] },
-  { name: 'Word Ladder', category: 'Graphs', url: 'https://leetcode.com/problems/word-ladder/', difficulty: 'Hard', companies: ['Amazon', 'Facebook', 'Google'], patterns: ['BFS'] },
-
-  // Dynamic Programming
-  { name: 'Climbing Stairs', category: 'Dynamic Programming', url: 'https://leetcode.com/problems/climbing-stairs/', difficulty: 'Easy', companies: ['Amazon', 'Google', 'Microsoft'], patterns: ['DP'] },
-  { name: 'House Robber', category: 'Dynamic Programming', url: 'https://leetcode.com/problems/house-robber/', difficulty: 'Medium', companies: ['Amazon', 'Google', 'Microsoft'], patterns: ['DP'] },
-  { name: 'Coin Change', category: 'Dynamic Programming', url: 'https://leetcode.com/problems/coin-change/', difficulty: 'Medium', companies: ['Amazon', 'Google', 'Microsoft', 'Facebook'], patterns: ['DP', 'Unbounded Knapsack'] },
-  { name: 'Longest Increasing Subsequence', category: 'Dynamic Programming', url: 'https://leetcode.com/problems/longest-increasing-subsequence/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Google'], patterns: ['DP', 'Binary Search'] },
-  { name: 'Edit Distance', category: 'Dynamic Programming', url: 'https://leetcode.com/problems/edit-distance/', difficulty: 'Medium', companies: ['Amazon', 'Google', 'Microsoft'], patterns: ['2D DP'] },
-
-  // Heap
-  { name: 'Kth Largest Element in an Array', category: 'Heap', url: 'https://leetcode.com/problems/kth-largest-element-in-an-array/', difficulty: 'Medium', companies: ['Facebook', 'Amazon', 'Microsoft', 'Google'], patterns: ['Heap', 'Quickselect'] },
-  { name: 'Top K Frequent Elements', category: 'Heap', url: 'https://leetcode.com/problems/top-k-frequent-elements/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Google'], patterns: ['Heap', 'Bucket Sort'] },
-  { name: 'Merge K Sorted Lists', category: 'Heap', url: 'https://leetcode.com/problems/merge-k-sorted-lists/', difficulty: 'Hard', companies: ['Amazon', 'Facebook', 'Microsoft', 'Uber'], patterns: ['Heap', 'Divide and Conquer'] },
-  { name: 'Find Median from Data Stream', category: 'Heap', url: 'https://leetcode.com/problems/find-median-from-data-stream/', difficulty: 'Hard', companies: ['Amazon', 'Google', 'Microsoft', 'Facebook'], patterns: ['Two Heaps'] },
-
-  // Linked List
-  { name: 'Reverse Linked List', category: 'Linked List', url: 'https://leetcode.com/problems/reverse-linked-list/', difficulty: 'Easy', companies: ['Amazon', 'Microsoft', 'Facebook'], patterns: ['Iterative Reversal'] },
-  { name: 'Merge Two Sorted Lists', category: 'Linked List', url: 'https://leetcode.com/problems/merge-two-sorted-lists/', difficulty: 'Easy', companies: ['Amazon', 'Microsoft', 'Facebook'], patterns: ['Two Pointers'] },
-  { name: 'Linked List Cycle', category: 'Linked List', url: 'https://leetcode.com/problems/linked-list-cycle/', difficulty: 'Easy', companies: ['Amazon', 'Microsoft'], patterns: ['Floyd\'s Cycle'] },
-  { name: 'LRU Cache', category: 'Linked List', url: 'https://leetcode.com/problems/lru-cache/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft', 'Google', 'Uber'], patterns: ['Hash Map + DLL'] },
-
-  // Backtracking
-  { name: 'Subsets', category: 'Backtracking', url: 'https://leetcode.com/problems/subsets/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft'], patterns: ['Backtracking'] },
-  { name: 'Permutations', category: 'Backtracking', url: 'https://leetcode.com/problems/permutations/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Facebook'], patterns: ['Backtracking'] },
-  { name: 'Combination Sum', category: 'Backtracking', url: 'https://leetcode.com/problems/combination-sum/', difficulty: 'Medium', companies: ['Amazon', 'Facebook', 'Microsoft'], patterns: ['Backtracking'] },
-  { name: 'Word Search', category: 'Backtracking', url: 'https://leetcode.com/problems/word-search/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Facebook'], patterns: ['DFS Backtracking'] },
-  { name: 'N-Queens', category: 'Backtracking', url: 'https://leetcode.com/problems/n-queens/', difficulty: 'Hard', companies: ['Amazon', 'Facebook'], patterns: ['Backtracking'] },
-
-  // Greedy
-  { name: 'Jump Game', category: 'Greedy', url: 'https://leetcode.com/problems/jump-game/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft', 'Facebook'], patterns: ['Greedy'] },
-  { name: 'Jump Game II', category: 'Greedy', url: 'https://leetcode.com/problems/jump-game-ii/', difficulty: 'Medium', companies: ['Amazon', 'Facebook'], patterns: ['Greedy'] },
-  { name: 'Gas Station', category: 'Greedy', url: 'https://leetcode.com/problems/gas-station/', difficulty: 'Medium', companies: ['Amazon', 'Microsoft'], patterns: ['Greedy'] },
-];
-
 const difficultyColors = {
   Easy: 'bg-green-500/10 text-green-600 border-green-500/20',
   Medium: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
@@ -133,33 +52,31 @@ const difficultyColors = {
 
 const confidenceLabels = ['Not confident', 'Somewhat', 'Okay', 'Good', 'Mastered'];
 
-export default function ProblemsPage() {
-  const [problemStatus, setProblemStatus] = useState<Record<string, SolvedStatus>>({});
+function ProblemsPageContent() {
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [companyFilter, setCompanyFilter] = useState<string>('all');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<'name' | 'difficulty'>('name');
-
-  const categories = Array.from(new Set(PROBLEMS.map(p => p.category)));
-  const companies = Array.from(new Set(PROBLEMS.flatMap(p => p.companies || []))).sort();
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
+  const [sheetFilter, setSheetFilter] = useState('all');
+  const [problemStatus, setProblemStatus] = useState<Record<string, SolvedStatus>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(CATEGORIES));
 
   useEffect(() => {
-    const saved = localStorage.getItem('problemStatus');
-    if (saved) {
-      try {
-        setProblemStatus(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error parsing localStorage:', e);
-      }
-    }
-    // Expand all categories by default
-    setExpandedCategories(new Set(categories));
     setMounted(true);
-  }, []);
+    const savedStatus = localStorage.getItem('problemStatus');
+    if (savedStatus) {
+      setProblemStatus(JSON.parse(savedStatus));
+    }
+    
+    // Check URL params
+    const companyParam = searchParams.get('company');
+    if (companyParam) {
+      setCompanyFilter(companyParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (mounted) {
@@ -193,13 +110,22 @@ export default function ProblemsPage() {
   };
 
   const filteredProblems = useMemo(() => {
-    return PROBLEMS.filter(p => {
+    return ALL_PROBLEMS.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.patterns?.some(pat => pat.toLowerCase().includes(searchQuery.toLowerCase())));
+        p.pattern.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesDifficulty = difficultyFilter === 'all' || p.difficulty === difficultyFilter;
       const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
-      const matchesCompany = companyFilter === 'all' || p.companies?.includes(companyFilter);
+      const matchesCompany = companyFilter === 'all' || p.companies.includes(companyFilter);
+      
+      let matchesSheet = true;
+      if (sheetFilter === 'blind75') {
+        matchesSheet = p.isBlind75;
+      } else if (sheetFilter === 'neetcode150') {
+        matchesSheet = p.isNeetCode150;
+      } else if (sheetFilter === 'faang') {
+        matchesSheet = p.isFaangFavorite;
+      }
       
       let matchesStatus = true;
       if (statusFilter === 'solved') {
@@ -208,9 +134,9 @@ export default function ProblemsPage() {
         matchesStatus = !problemStatus[p.name]?.solved;
       }
       
-      return matchesSearch && matchesDifficulty && matchesCategory && matchesStatus && matchesCompany;
+      return matchesSearch && matchesDifficulty && matchesCategory && matchesStatus && matchesCompany && matchesSheet;
     });
-  }, [searchQuery, difficultyFilter, categoryFilter, statusFilter, companyFilter, problemStatus]);
+  }, [searchQuery, difficultyFilter, categoryFilter, statusFilter, companyFilter, sheetFilter, problemStatus]);
 
   const groupedProblems = useMemo(() => {
     const grouped: Record<string, Problem[]> = {};
@@ -223,10 +149,19 @@ export default function ProblemsPage() {
 
   const stats = useMemo(() => {
     const solved = Object.values(problemStatus).filter(s => s.solved).length;
-    const easy = PROBLEMS.filter(p => p.difficulty === 'Easy' && problemStatus[p.name]?.solved).length;
-    const medium = PROBLEMS.filter(p => p.difficulty === 'Medium' && problemStatus[p.name]?.solved).length;
-    const hard = PROBLEMS.filter(p => p.difficulty === 'Hard' && problemStatus[p.name]?.solved).length;
-    return { solved, easy, medium, hard, total: PROBLEMS.length };
+    const easy = ALL_PROBLEMS.filter(p => p.difficulty === 'Easy' && problemStatus[p.name]?.solved).length;
+    const medium = ALL_PROBLEMS.filter(p => p.difficulty === 'Medium' && problemStatus[p.name]?.solved).length;
+    const hard = ALL_PROBLEMS.filter(p => p.difficulty === 'Hard' && problemStatus[p.name]?.solved).length;
+    const blind75Solved = ALL_PROBLEMS.filter(p => p.isBlind75 && problemStatus[p.name]?.solved).length;
+    const neetcode150Solved = ALL_PROBLEMS.filter(p => p.isNeetCode150 && problemStatus[p.name]?.solved).length;
+    return { 
+      solved, easy, medium, hard, 
+      total: ALL_PROBLEMS.length,
+      blind75Solved,
+      blind75Total: getBlind75Problems().length,
+      neetcode150Solved,
+      neetcode150Total: getNeetCode150Problems().length
+    };
   }, [problemStatus]);
 
   const toggleCategory = (category: string) => {
@@ -250,13 +185,32 @@ export default function ProblemsPage() {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">DSA Problems</h1>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                DSA Problems
+                <Badge variant="outline" className="text-sm">{ALL_PROBLEMS.length}+</Badge>
+              </h1>
               <p className="text-muted-foreground">
                 {stats.solved} / {stats.total} solved • 
                 <span className="text-green-600 ml-2">{stats.easy} Easy</span> • 
                 <span className="text-yellow-600 ml-2">{stats.medium} Medium</span> • 
                 <span className="text-red-600 ml-2">{stats.hard} Hard</span>
               </p>
+            </div>
+            
+            {/* Sheet Progress Cards */}
+            <div className="flex gap-3">
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg px-3 py-2 text-center">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Target className="w-3 h-3" /> Blind 75
+                </div>
+                <div className="font-bold text-blue-600">{stats.blind75Solved}/{stats.blind75Total}</div>
+              </div>
+              <div className="bg-gradient-to-r from-green-500/10 to-teal-500/10 border border-green-500/20 rounded-lg px-3 py-2 text-center">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> NeetCode 150
+                </div>
+                <div className="font-bold text-green-600">{stats.neetcode150Solved}/{stats.neetcode150Total}</div>
+              </div>
             </div>
             
             {/* Progress */}
@@ -275,7 +229,7 @@ export default function ProblemsPage() {
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
               <div className="lg:col-span-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -287,6 +241,18 @@ export default function ProblemsPage() {
                   />
                 </div>
               </div>
+              
+              <Select value={sheetFilter} onValueChange={setSheetFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Problem Sheet" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Problems</SelectItem>
+                  <SelectItem value="blind75">🎯 Blind 75</SelectItem>
+                  <SelectItem value="neetcode150">⚡ NeetCode 150</SelectItem>
+                  <SelectItem value="faang">🔥 FAANG Favorites</SelectItem>
+                </SelectContent>
+              </Select>
               
               <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                 <SelectTrigger>
@@ -306,7 +272,7 @@ export default function ProblemsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(cat => (
+                  {CATEGORIES.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
@@ -318,7 +284,7 @@ export default function ProblemsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Companies</SelectItem>
-                  {companies.map(company => (
+                  {COMPANIES.map(company => (
                     <SelectItem key={company} value={company}>{company}</SelectItem>
                   ))}
                 </SelectContent>
@@ -329,9 +295,9 @@ export default function ProblemsPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Problems</SelectItem>
-                  <SelectItem value="solved">Solved</SelectItem>
-                  <SelectItem value="unsolved">Unsolved</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="solved">✅ Solved</SelectItem>
+                  <SelectItem value="unsolved">⭕ Unsolved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -395,30 +361,40 @@ export default function ProblemsPage() {
                               </button>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
+                                  <Link
+                                    href={`/problems/${problem.slug || problem.name.toLowerCase().replace(/[']/g, '').replace(/[^a-z0-9]+/g, '-')}`}
+                                    className="font-medium hover:text-primary transition-colors flex items-center gap-1 text-lg"
+                                  >
+                                    {problem.name}
+                                  </Link>
                                   <a
                                     href={problem.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`font-medium hover:text-primary transition-colors ${
-                                      isSolved ? 'line-through text-muted-foreground' : ''
-                                    }`}
+                                    className="text-muted-foreground hover:text-primary transition-colors"
+                                    title="Solve on LeetCode"
                                   >
-                                    {problem.name}
-                                    <ExternalLink className="inline w-3 h-3 ml-1" />
+                                    <ExternalLink className="w-4 h-4" />
                                   </a>
                                   <Badge className={difficultyColors[problem.difficulty]}>
                                     {problem.difficulty}
                                   </Badge>
+                                  {problem.isBlind75 && (
+                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
+                                      🎯 Blind 75
+                                    </Badge>
+                                  )}
+                                  {problem.isNeetCode150 && (
+                                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-xs">
+                                      ⚡ NC 150
+                                    </Badge>
+                                  )}
                                 </div>
-                                {problem.patterns && (
-                                  <div className="flex items-center gap-1 mt-1 flex-wrap">
-                                    {problem.patterns.map(pattern => (
-                                      <Badge key={pattern} variant="outline" className="text-xs">
-                                        {pattern}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                  <Badge variant="outline" className="text-xs">
+                                    {problem.pattern}
+                                  </Badge>
+                                </div>
                                 {problem.companies && problem.companies.length > 0 && (
                                   <div className="text-xs text-muted-foreground mt-1">
                                     Asked at: {problem.companies.slice(0, 4).join(', ')}
@@ -478,5 +454,13 @@ export default function ProblemsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ProblemsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProblemsPageContent />
+    </Suspense>
   );
 }

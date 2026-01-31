@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -271,10 +272,18 @@ export default function CompaniesPage() {
           <div className="lg:col-span-2">
             {selectedCompany ? (
               <Tabs defaultValue="overview" className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedCompany.name}</h2>
-                    <p className="text-muted-foreground">{selectedCompany.description}</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold">{selectedCompany.name}</h2>
+                      <p className="text-muted-foreground">{selectedCompany.description}</p>
+                    </div>
+                    <Link href={`/problems?company=${selectedCompany.slug}`}>
+                        <Button>
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          View Problems
+                        </Button>
+                    </Link>
                   </div>
                   <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>

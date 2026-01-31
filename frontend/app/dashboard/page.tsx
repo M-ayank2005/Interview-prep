@@ -12,6 +12,7 @@ import {
   CheckCircle2, Circle, Star, BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
+import { PROBLEMS as ALL_PROBLEMS } from '@/lib/problems-data';
 
 interface DashboardData {
   targetCompany?: string;
@@ -34,14 +35,8 @@ interface DailyProblem {
   url: string;
 }
 
-// Fallback local data for problems
-const PROBLEMS = [
-  { name: 'Two Sum', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/two-sum/', difficulty: 'Easy' as const },
-  { name: 'Maximum Subarray', category: 'Arrays & Hashing', url: 'https://leetcode.com/problems/maximum-subarray/', difficulty: 'Medium' as const },
-  { name: '3Sum', category: 'Two Pointers', url: 'https://leetcode.com/problems/3sum/', difficulty: 'Medium' as const },
-  { name: 'Trapping Rain Water', category: 'Two Pointers', url: 'https://leetcode.com/problems/trapping-rain-water/', difficulty: 'Hard' as const },
-  { name: 'Number of Islands', category: 'Graphs', url: 'https://leetcode.com/problems/number-of-islands/', difficulty: 'Medium' as const },
-];
+// Fallback local data for problems is removed in favor of imported ALL_PROBLEMS
+// const PROBLEMS = ... (removed)
 
 const difficultyColors = {
   Easy: 'bg-green-500/10 text-green-600 border-green-500/20',
@@ -116,9 +111,10 @@ export default function Dashboard() {
       try {
         const status = JSON.parse(saved);
         const solvedKeys = Object.keys(status).filter(k => status[k].solved);
-        const easy = solvedKeys.filter(k => PROBLEMS.find(p => p.name === k)?.difficulty === 'Easy').length;
-        const medium = solvedKeys.filter(k => PROBLEMS.find(p => p.name === k)?.difficulty === 'Medium').length;
-        const hard = solvedKeys.filter(k => PROBLEMS.find(p => p.name === k)?.difficulty === 'Hard').length;
+        // Use ALL_PROBLEMS from lib/problems-data
+        const easy = solvedKeys.filter(k => ALL_PROBLEMS.find(p => p.name === k)?.difficulty === 'Easy').length;
+        const medium = solvedKeys.filter(k => ALL_PROBLEMS.find(p => p.name === k)?.difficulty === 'Medium').length;
+        const hard = solvedKeys.filter(k => ALL_PROBLEMS.find(p => p.name === k)?.difficulty === 'Hard').length;
         
         // Calculate streak
         const savedStreak = localStorage.getItem('streak');
@@ -141,8 +137,8 @@ export default function Dashboard() {
     // Set daily problem based on date
     const today = new Date();
     const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    const index = seed % PROBLEMS.length;
-    setDailyProblem(PROBLEMS[index]);
+    const index = seed % ALL_PROBLEMS.length;
+    setDailyProblem(ALL_PROBLEMS[index]);
     
     setMounted(true);
   }, []);
@@ -167,7 +163,7 @@ export default function Dashboard() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                Interview Prep Pro
+                Interview Prep
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl">
                 The ultimate platform to ace your SDE interviews. Master DSA patterns, track progress, 
