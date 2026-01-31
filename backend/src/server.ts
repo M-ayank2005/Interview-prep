@@ -51,6 +51,11 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Root route - health check
+app.get('/', (req, res) => {
+  res.send('🚀 Interview Prep API Server is running!');
+});
+
 // Session middleware (for all /api routes)
 app.use('/api', sessionMiddleware);
 
