@@ -21,8 +21,10 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: config.frontendUrl,
+    origin: config.frontendUrl || '*',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
     exposedHeaders: ['X-Session-Id'],
   })
 );
@@ -59,12 +61,14 @@ app.use('/api', routes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server
-const PORT = config.port;
-app.listen(PORT, () => {
-  logger.info(`🚀 Server running in ${config.nodeEnv} mode on port ${PORT}`);
-  logger.info(`📚 API Documentation: http://localhost:${PORT}/api/health`);
-});
+// Only start server if not in Vercel serverless environment
+if (process.env.VERCEL !== '1') {
+  const PORT = config.port;
+  app.listen(PORT, () => {
+    logger.info(`🚀 Server running in ${config.nodeEnv} mode on port ${PORT}`);
+    logger.info(`📚 API Documentation: http://localhost:${PORT}/api/health`);
+  });
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
@@ -74,7 +78,11 @@ process.on('unhandledRejection', (reason, promise) => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
-  process.exit(1);
+  if (process.env.VERCEL !== '1') {
+    process.exit(1);
+  }
 });
 
+// Export for Vercel serverless
 export default app;
+module.exports = app;

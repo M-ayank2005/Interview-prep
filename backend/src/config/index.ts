@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Load environment variables (skip in Vercel as env vars are injected)
+if (process.env.VERCEL !== '1') {
+  dotenv.config({ path: path.join(__dirname, '../../.env') });
+}
 
 interface Config {
   nodeEnv: string;
@@ -24,7 +26,7 @@ const config: Config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || '*',
   logLevel: process.env.LOG_LEVEL || 'info',
 };
 
