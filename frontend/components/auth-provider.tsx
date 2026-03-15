@@ -32,8 +32,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    const isAuthPage = pathname === '/login' || pathname === '/signup';
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+
+    if (isAuthPage && !hasToken) {
+      setIsLoading(false);
+      return;
+    }
+
     checkAuth();
-  }, []);
+  }, [pathname]);
 
   const checkAuth = async () => {
     try {
