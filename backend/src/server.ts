@@ -1,5 +1,5 @@
 import express, { Application } from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
@@ -20,14 +20,45 @@ connectDB();
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = (process.env.FRONTEND_URLS || config.frontendUrl || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isOriginAllowed = (origin: string): boolean => {
+  if (allowedOrigins.length === 0) {
+    return process.env.NODE_ENV !== 'production';
+  }
+
+  return allowedOrigins.some((allowedOrigin) => {
+    if (allowedOrigin === '*' || allowedOrigin === origin) {
+      return true;
+    }
+
+    if (allowedOrigin.startsWith('*.')) {
+      return origin.endsWith(allowedOrigin.slice(1));
+    }
+
+    return false;
+  });
+};
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+
+    callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
+  exposedHeaders: ['X-Session-Id'],
+};
+
 app.use(
-  cors({
-    origin: config.frontendUrl || '*',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
-    exposedHeaders: ['X-Session-Id'],
-  })
+  cors(corsOptions)
 );
 
 // Rate limiting

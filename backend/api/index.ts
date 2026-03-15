@@ -1,5 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import mongoose from 'mongoose';
 
 // Initialize express app
@@ -30,13 +30,44 @@ const connectDB = async (): Promise<typeof mongoose> => {
 };
 
 // CORS configuration
+const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const isOriginAllowed = (origin: string): boolean => {
+  if (allowedOrigins.length === 0) {
+    return process.env.NODE_ENV !== 'production';
+  }
+
+  return allowedOrigins.some((allowedOrigin) => {
+    if (allowedOrigin === '*' || allowedOrigin === origin) {
+      return true;
+    }
+
+    if (allowedOrigin.startsWith('*.')) {
+      return origin.endsWith(allowedOrigin.slice(1));
+    }
+
+    return false;
+  });
+};
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+
+    callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
+};
+
 app.use(
-  cors({
-    origin: '*',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
-  })
+  cors(corsOptions)
 );
 
 // Body parsing
