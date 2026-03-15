@@ -30,11 +30,30 @@ async function fetchAPI<T>(
     },
   });
 
-  const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  const isJsonResponse = contentType.includes('application/json');
+
+  let data: any = null;
+  if (isJsonResponse) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    data = { raw: text };
+  }
 
   if (!response.ok) {
-    const errorMsg = data.message || data.error?.message || 'API request failed';
+    const htmlError = !isJsonResponse && typeof data.raw === 'string' && data.raw.trim().startsWith('<');
+    const errorMsg =
+      data.message ||
+      data.error?.message ||
+      (htmlError
+        ? `Server returned an HTML error page (${response.status}). Check backend logs and API URL.`
+        : 'API request failed');
     throw new Error(errorMsg);
+  }
+
+  if (!isJsonResponse) {
+    throw new Error(`Expected JSON response but received '${contentType || 'unknown'}'`);
   }
 
   return data;

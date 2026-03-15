@@ -3,6 +3,8 @@ import logger from '../utils/logger';
 
 export interface ApiError extends Error {
   statusCode?: number;
+  status?: number;
+  type?: string;
   isOperational?: boolean;
 }
 
@@ -12,8 +14,11 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  const isBodyParseError = err.type === 'entity.parse.failed';
+  const statusCode = err.statusCode || err.status || (isBodyParseError ? 400 : 500);
+  const message = isBodyParseError
+    ? 'Invalid JSON payload'
+    : (err.message || 'Internal Server Error');
 
   logger.error(`${statusCode} - ${message} - ${req.originalUrl} - ${req.method}`);
 

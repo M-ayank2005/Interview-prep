@@ -1,6 +1,9 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors, { CorsOptions } from 'cors';
+import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
+import routes from '../src/routes';
+import { sessionMiddleware, errorHandler, notFoundHandler } from '../src/middleware';
 
 // Initialize express app
 const app: Application = express();
@@ -41,7 +44,11 @@ const isOriginAllowed = (origin: string): boolean => {
   }
 
   return allowedOrigins.some((allowedOrigin) => {
-    if (allowedOrigin === '*' || allowedOrigin === origin) {
+    if (allowedOrigin === '*') {
+      return process.env.NODE_ENV !== 'production';
+    }
+
+    if (allowedOrigin === origin) {
       return true;
     }
 
@@ -73,6 +80,7 @@ app.use(
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Root route - health check
 app.get('/', async (req: Request, res: Response) => {
@@ -124,40 +132,13 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// Dynamic import of routes
-let routesLoaded = false;
-app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
-  if (!routesLoaded) {
-    try {
-      const { default: routes } = await import('../src/routes');
-      app.use('/api', routes);
-      routesLoaded = true;
-    } catch (error) {
-      console.error('Failed to load routes:', error);
-      return res.status(500).json({ 
-        success: false, 
-        error: { message: 'Failed to load routes' }
-      });
-    }
-  }
-  next();
-});
+// Session middleware + routes
+app.use('/api', sessionMiddleware);
+app.use('/api', routes);
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: { message: `Route ${req.method} ${req.path} not found` }
-  });
-});
-
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
-  res.status(500).json({
-    success: false,
-    error: { message: err.message || 'Internal server error' }
-  });
-});
+// Error handlers
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
+module.exports = app;
