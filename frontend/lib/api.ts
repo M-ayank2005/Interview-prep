@@ -1,6 +1,11 @@
 // API Client for Interview Prep Backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+const getAuthToken = (): string => {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('authToken') || '';
+};
+
 // Get or create session ID
 const getSessionId = (): string => {
   if (typeof window === 'undefined') return '';
@@ -19,15 +24,22 @@ async function fetchAPI<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const sessionId = getSessionId();
+  const authToken = getAuthToken();
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'X-Session-Id': sessionId,
+    ...options.headers,
+  };
+
+  if (authToken) {
+    (headers as Record<string, string>).Authorization = `Bearer ${authToken}`;
+  }
   
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     credentials: 'include', // Important to send cookies
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Session-Id': sessionId,
-      ...options.headers,
-    },
+    headers,
   });
 
   const contentType = response.headers.get('content-type') || '';

@@ -16,6 +16,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const setAuthToken = (token?: string) => {
+  if (typeof window === 'undefined') return;
+  if (token) {
+    localStorage.setItem('authToken', token);
+  } else {
+    localStorage.removeItem('authToken');
+  }
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,8 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (data: any) => {
     try {
       setIsLoading(true);
-      const res = await authAPI.login(data);
+      const res = await authAPI.login(data) as { success: boolean; data?: User; token?: string };
       if (res.success && res.data) {
+        setAuthToken(res.token);
         setUser(res.data);
         toast.success('Login successful!');
         router.push('/dashboard');
@@ -67,8 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (data: any) => {
     try {
       setIsLoading(true);
-      const res = await authAPI.register(data);
+      const res = await authAPI.register(data) as { success: boolean; data?: User; token?: string };
       if (res.success && res.data) {
+        setAuthToken(res.token);
         setUser(res.data);
         toast.success('Registration successful!');
         router.push('/dashboard');
@@ -90,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       await authAPI.logout();
+      setAuthToken(undefined);
       setUser(null);
       toast.success('Logged out successfully');
       router.push('/login');

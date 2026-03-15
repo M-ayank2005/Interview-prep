@@ -106,8 +106,7 @@ export const logout = async (req: Request, res: Response) => {
 // @access  Private
 export const getMe = async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user?.id);
-    res.status(200).json({ success: true, data: user });
+    res.status(200).json({ success: true, data: req.user });
   } catch (error: any) {
     res.status(500).json({ success: false, error: { message: error.message } });
   }

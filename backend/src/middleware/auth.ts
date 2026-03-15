@@ -13,11 +13,16 @@ declare global {
 }
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
-  let token;
+  let token: string | undefined;
 
   // Check cookies for token
   if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
+  }
+
+  // Fallback to Authorization header (Bearer <token>)
+  if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
   if (!token) {

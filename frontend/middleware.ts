@@ -1,25 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicRoutes = ['/', '/login', '/signup'];
-
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
   const path = request.nextUrl.pathname;
 
-  const isPublicRoute = publicRoutes.includes(path);
-
-  // If trying to access hidden protected route without a token
-  if (!token && !isPublicRoute) {
-    if (path.startsWith('/api/') || path.startsWith('/_next/')) {
-       return NextResponse.next();
-    }
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // If trying to access login/signup while already authenticated
-  if (token && (path === '/login' || path === '/signup' || path === '/')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Frontend and backend are deployed on different domains, so backend auth cookies
+  // are not readable by this middleware. Keep middleware non-blocking.
+  if (path.startsWith('/api/') || path.startsWith('/_next/')) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();
