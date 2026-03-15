@@ -4,8 +4,41 @@ import subprocess
 import os
 import tempfile
 import sys
+from urllib.parse import urlparse
+import shutil
 
 PORT = 3001
+
+LANGUAGE_CONFIG = {
+    'python': {
+        'name': 'Python 3',
+        'commands': [['python'], ['py', '-3'], ['py']],
+        'install_prompt': 'Python is not installed. Install Python and ensure it is added to PATH.',
+        'install_command': 'winget install -e --id Python.Python.3.12',
+        'docs_url': 'https://www.python.org/downloads/'
+    },
+    'cpp': {
+        'name': 'C++ (g++)',
+        'commands': [['g++'], ['clang++']],
+        'install_prompt': 'C++ compiler not found. Install MinGW-w64 (g++) or LLVM (clang++).',
+        'install_command': 'winget install -e --id MSYS2.MSYS2',
+        'docs_url': 'https://www.msys2.org/'
+    },
+    'java': {
+        'name': 'Java',
+        'commands': [['java']],
+        'install_prompt': 'Java is not installed. Install JDK and ensure java/javac are in PATH.',
+        'install_command': 'winget install -e --id EclipseAdoptium.Temurin.21.JDK',
+        'docs_url': 'https://adoptium.net/'
+    },
+    'go': {
+        'name': 'Go',
+        'commands': [['go']],
+        'install_prompt': 'Go is not installed. Install Go and ensure go is in PATH.',
+        'install_command': 'winget install -e --id GoLang.Go',
+        'docs_url': 'https://go.dev/dl/'
+    }
+}
 
 class RequestHandler(http.server.BaseHTTPRequestHandler):
     def _set_headers(self, status=200):
@@ -20,9 +53,26 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         self._set_headers()
 
     def do_GET(self):
-        if self.path == '/health':
+        path = urlparse(self.path).path
+
+        if path == '/health':
             self._set_headers()
-            self.wfile.write(json.dumps({"status": "ok"}).encode())
+            self.wfile.write(json.dumps({
+                "status": "ok",
+                "supportedLanguages": list(LANGUAGE_CONFIG.keys())
+            }).encode())
+        elif path == '/languages':
+            statuses = {}
+            for language in LANGUAGE_CONFIG:
+                statuses[language] = self.check_language(language)
+
+            self._set_headers()
+            self.wfile.write(json.dumps({"languages": statuses}).encode())
+        elif path.startswith('/languages/'):
+            language = path.split('/languages/', 1)[1].strip().lower()
+            status = self.check_language(language)
+            self._set_headers(200 if language in LANGUAGE_CONFIG else 400)
+            self.wfile.write(json.dumps(status).encode())
         else:
             self.send_error(404)
 
@@ -41,8 +91,69 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    def find_available_command(self, commands):
+        for command in commands:
+            try:
+                result = subprocess.run(
+                    command + ['--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=3
+                )
+                if result.returncode == 0:
+                    version = (result.stdout or result.stderr).strip().splitlines()
+                    return {
+                        "command": command,
+                        "version": version[0] if version else "Unknown version"
+                    }
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+            except Exception:
+                continue
+
+        return None
+
+    def check_language(self, language):
+        language = (language or '').lower()
+        config = LANGUAGE_CONFIG.get(language)
+
+        if not config:
+            return {
+                "language": language,
+                "installed": False,
+                "error": "Unsupported language"
+            }
+
+        command_info = self.find_available_command(config['commands'])
+        if command_info:
+            return {
+                "language": language,
+                "installed": True,
+                "version": command_info['version'],
+                "command": ' '.join(command_info['command'])
+            }
+
+        return {
+            "language": language,
+            "installed": False,
+            "installPrompt": config['install_prompt'],
+            "installCommand": config['install_command'],
+            "docsUrl": config['docs_url']
+        }
+
     def run_code(self, language, code):
         try:
+            language_status = self.check_language(language)
+            if not language_status.get('installed'):
+                return {
+                    "error": language_status.get('installPrompt') or "Selected language is not installed.",
+                    "code": "LANGUAGE_NOT_INSTALLED",
+                    "language": language,
+                    "installPrompt": language_status.get('installPrompt'),
+                    "installCommand": language_status.get('installCommand'),
+                    "docsUrl": language_status.get('docsUrl')
+                }
+
             if language == 'python':
                 return self.run_python(code)
             elif language == 'cpp':
@@ -63,7 +174,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
                 capture_output=True, 
                 text=True, 
                 timeout=timeout,
-                shell=True # Needed for some windows path issues, but risky. For local dev tool it's okay.
+                shell=False
             )
             return {
                 "stdout": result.stdout,
@@ -76,26 +187,23 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
              return {"error": "Compiler/Interpreter not found. Is it installed and in your PATH?"}
 
     def run_python(self, code):
-        # Check if python is installed
-        check = subprocess.run(['python', '--version'], capture_output=True)
-        if check.returncode != 0:
-             return {"error": "Python not found. Please install Python."}
+        command_info = self.find_available_command(LANGUAGE_CONFIG['python']['commands'])
+        if not command_info:
+            return {"error": LANGUAGE_CONFIG['python']['install_prompt']}
 
         with tempfile.NamedTemporaryFile(suffix='.py', delete=False, mode='w+') as f:
             f.write(code)
             f_path = f.name
         
         try:
-            return self.run_command(['python', f_path])
+            return self.run_command(command_info['command'] + [f_path])
         finally:
             os.remove(f_path)
 
     def run_cpp(self, code):
-        # Check if g++ is installed
-        try:
-             subprocess.run(['g++', '--version'], capture_output=True, check=True)
-        except:
-             return {"error": "G++ not found. Please install MinGW or G++."}
+        command_info = self.find_available_command(LANGUAGE_CONFIG['cpp']['commands'])
+        if not command_info:
+            return {"error": LANGUAGE_CONFIG['cpp']['install_prompt']}
 
         with tempfile.NamedTemporaryFile(suffix='.cpp', delete=False, mode='w+') as f:
             f.write(code)
@@ -104,7 +212,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         
         try:
             # Compile
-            compile_res = subprocess.run(['g++', src_path, '-o', exe_path], capture_output=True, text=True)
+            compile_res = subprocess.run(command_info['command'] + [src_path, '-o', exe_path], capture_output=True, text=True)
             if compile_res.returncode != 0:
                 return {"stdout": "", "stderr": compile_res.stderr, "exitCode": compile_res.returncode}
             
@@ -120,6 +228,11 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         # We'll assume the user uses 'class Main' and we name file 'Main.java'
         if "class Main" not in code:
              return {"error": "Java code must contain 'class Main'."}
+
+        java_check = self.find_available_command([['java']])
+        javac_check = self.find_available_command([['javac']])
+        if not java_check or not javac_check:
+            return {"error": LANGUAGE_CONFIG['java']['install_prompt']}
         
         temp_dir = tempfile.mkdtemp()
         src_path = os.path.join(temp_dir, "Main.java")
@@ -138,22 +251,19 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
              return self.run_command(['java', '-cp', temp_dir, 'Main'])
         finally:
              # Cleanup dir
-             import shutil
              shutil.rmtree(temp_dir)
 
     def run_go(self, code):
-        # Check go
-        try:
-             subprocess.run(['go', 'version'], capture_output=True, check=True)
-        except:
-             return {"error": "Go not found. Please install Go."}
+           command_info = self.find_available_command(LANGUAGE_CONFIG['go']['commands'])
+           if not command_info:
+              return {"error": LANGUAGE_CONFIG['go']['install_prompt']}
 
         with tempfile.NamedTemporaryFile(suffix='.go', delete=False, mode='w+') as f:
             f.write(code)
             src_path = f.name
         
         try:
-            return self.run_command(['go', 'run', src_path])
+              return self.run_command(command_info['command'] + ['run', src_path])
         finally:
              os.remove(src_path)
 
