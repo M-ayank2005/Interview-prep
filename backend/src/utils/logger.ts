@@ -27,14 +27,19 @@ const format = winston.format.combine(
   )
 );
 
-const transports = [
-  new winston.transports.Console(),
-  new winston.transports.File({
-    filename: 'logs/error.log',
-    level: 'error',
-  }),
-  new winston.transports.File({ filename: 'logs/all.log' }),
-];
+const transports: winston.transport[] = [new winston.transports.Console()];
+
+const enableFileTransports = process.env.VERCEL !== '1' && process.env.DISABLE_FILE_LOGS !== '1';
+
+if (enableFileTransports) {
+  transports.push(
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+    }),
+    new winston.transports.File({ filename: 'logs/all.log' })
+  );
+}
 
 const logger = winston.createLogger({
   level: config.logLevel,
