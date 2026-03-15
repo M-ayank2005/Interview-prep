@@ -51,7 +51,7 @@ const calculateNextReview = (
 // Get user's progress on all problems
 export const getProgress = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { status, category, difficulty } = req.query;
 
     const pipeline: PipelineStage[] = [
@@ -92,7 +92,7 @@ export const getProgress = async (req: Request, res: Response): Promise<void> =>
 // Update progress for a specific problem
 export const updateProgress = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { problemId } = req.params;
     const {
       status,
@@ -195,7 +195,7 @@ const updateUserStats = async (sessionId: string, difficulty: string): Promise<v
 // Get problems due for review (spaced repetition)
 export const getReviewDue = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { limit = 10 } = req.query;
 
     const dueProblems = await ProblemProgress.find({
@@ -220,7 +220,7 @@ export const getReviewDue = async (req: Request, res: Response): Promise<void> =
 // Get comprehensive analytics
 export const getAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { days = 30 } = req.query;
 
     const startDate = new Date();
@@ -325,7 +325,7 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
 // Log daily activity
 export const logActivity = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { problemsSolved, studyTime, mood, notes } = req.body;
 
     const today = new Date();
@@ -369,7 +369,7 @@ export const logActivity = async (req: Request, res: Response): Promise<void> =>
 // Get streak data
 export const getStreak = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
 
     const userSession = await UserSession.findOne({ sessionId });
     

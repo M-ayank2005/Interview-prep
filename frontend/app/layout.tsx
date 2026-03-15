@@ -2,8 +2,11 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
+import { AppSidebar } from '@/components/app-sidebar';
 import { Navigation } from '@/components/navigation';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { QueryProvider } from '@/components/query-provider';
+import { AuthProvider } from '@/components/auth-provider';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
@@ -27,9 +30,18 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${_geist.className} font-sans antialiased bg-background text-foreground`}>
         <QueryProvider>
-          <Navigation />
-          {children}
-          <Toaster position="top-right" richColors closeButton />
+          <AuthProvider>
+            <SidebarProvider>
+              <Navigation />
+              <AppSidebar />
+              <SidebarInset className="overflow-hidden pt-16">
+                <div className="flex-1 overflow-auto">
+                  {children}
+                </div>
+              </SidebarInset>
+            </SidebarProvider>
+            <Toaster position="top-right" richColors closeButton />
+          </AuthProvider>
         </QueryProvider>
         <Analytics />
       </body>

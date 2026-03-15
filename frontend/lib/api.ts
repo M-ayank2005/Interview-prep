@@ -22,6 +22,7 @@ async function fetchAPI<T>(
   
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
+    credentials: 'include', // Important to send cookies
     headers: {
       'Content-Type': 'application/json',
       'X-Session-Id': sessionId,
@@ -32,11 +33,26 @@ async function fetchAPI<T>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error?.message || 'API request failed');
+    const errorMsg = data.message || data.error?.message || 'API request failed';
+    throw new Error(errorMsg);
   }
 
   return data;
 }
+
+// Auth API
+export const authAPI = {
+  getMe: () => fetchAPI<{ success: boolean; data: User }>('/auth/me'),
+  login: (data: LoginData) => fetchAPI<{ success: boolean; data: User }>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  register: (data: RegisterData) => fetchAPI<{ success: boolean; data: User }>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  logout: () => fetchAPI<{ success: boolean }>('/auth/logout'),
+};
 
 // Problems API
 export const problemsAPI = {
@@ -185,6 +201,18 @@ export const snippetsAPI = {
 };
 
 // Types
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  targetCompany?: string;
+  targetRole?: string;
+  interviewDate?: string;
+  dailyGoal: number;
+  isAdmin: boolean;
+}
+
 export interface Problem {
   _id: string;
   leetcodeId?: number;
@@ -469,4 +497,15 @@ export interface CreateSnippetData {
   tags?: string[];
   isTemplate?: boolean;
   isPublic?: boolean;
+}
+
+export interface LoginData {
+  email: string;
+  password?: string;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password?: string;
 }

@@ -70,7 +70,7 @@ export const getStudyPlan = async (req: Request, res: Response): Promise<void> =
 // Enroll in a study plan
 export const enrollInPlan = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { planId } = req.params;
 
     const plan = await StudyPlan.findById(planId);
@@ -113,7 +113,7 @@ export const enrollInPlan = async (req: Request, res: Response): Promise<void> =
 // Get user's enrolled plans
 export const getMyEnrollments = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
 
     const enrollments = await StudyPlanEnrollment.find({ sessionId })
       .populate('studyPlanId')
@@ -132,7 +132,7 @@ export const getMyEnrollments = async (req: Request, res: Response): Promise<voi
 // Update enrollment progress
 export const updateEnrollmentProgress = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { enrollmentId } = req.params;
     const { completedProblemId, status } = req.body;
 
@@ -192,7 +192,7 @@ export const updateEnrollmentProgress = async (req: Request, res: Response): Pro
 // Get today's problems for an enrollment
 export const getTodayProblems = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { enrollmentId } = req.params;
 
     const enrollment = await StudyPlanEnrollment.findOne({
@@ -231,7 +231,7 @@ export const getTodayProblems = async (req: Request, res: Response): Promise<voi
 // Create custom study plan
 export const createCustomPlan = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { name, description, durationDays, problemIds, difficulty } = req.body;
 
     // Validate problems exist

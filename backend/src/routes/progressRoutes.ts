@@ -8,7 +8,12 @@ import {
   getStreak,
 } from '../controllers/progressController';
 
+import { protect } from '../middleware/auth';
+
 const router = Router();
+
+// Apply protect middleware to all progress routes
+router.use(protect);
 
 // GET /api/progress - Get all progress for user
 router.get('/', getProgress);

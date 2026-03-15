@@ -1,3 +1,4 @@
+export { User, IUser } from './User';
 export { Problem, IProblem } from './Problem';
 export { UserSession, IUserSession } from './UserSession';
 export { ProblemProgress, IProblemProgress } from './ProblemProgress';

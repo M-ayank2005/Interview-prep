@@ -6,7 +6,7 @@ import logger from '../utils/logger';
 // Get all code snippets for a user
 export const getSnippets = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { language, category, isTemplate, page = 1, limit = 20 } = req.query;
 
     const query: Record<string, unknown> = { sessionId };
@@ -73,7 +73,7 @@ export const getTemplates = async (req: Request, res: Response): Promise<void> =
 // Get snippet by ID
 export const getSnippet = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
 
     const snippet = await CodeSnippet.findOne({
@@ -101,7 +101,7 @@ export const getSnippet = async (req: Request, res: Response): Promise<void> => 
 // Create a new snippet
 export const createSnippet = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { title, description, language, code, category, tags, problemId, isTemplate, isPublic } = req.body;
 
     const snippet = await CodeSnippet.create({
@@ -130,7 +130,7 @@ export const createSnippet = async (req: Request, res: Response): Promise<void> 
 // Update a snippet
 export const updateSnippet = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
     const updates = req.body;
 
@@ -161,7 +161,7 @@ export const updateSnippet = async (req: Request, res: Response): Promise<void> 
 // Delete a snippet
 export const deleteSnippet = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
 
     const snippet = await CodeSnippet.findOneAndDelete({ _id: id, sessionId });

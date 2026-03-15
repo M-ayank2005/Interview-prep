@@ -6,7 +6,7 @@ import logger from '../utils/logger';
 // Get all mock interviews
 export const getMockInterviews = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { status, type, page = 1, limit = 20 } = req.query;
 
     const query: Record<string, unknown> = { sessionId };
@@ -46,7 +46,7 @@ export const getMockInterviews = async (req: Request, res: Response): Promise<vo
 // Get mock interview by ID
 export const getMockInterview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
 
     const interview = await MockInterview.findOne({ _id: id, sessionId })
@@ -70,7 +70,7 @@ export const getMockInterview = async (req: Request, res: Response): Promise<voi
 // Create a new mock interview
 export const createMockInterview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const {
       title,
       scheduledDate,
@@ -136,7 +136,7 @@ export const createMockInterview = async (req: Request, res: Response): Promise<
 // Update mock interview
 export const updateMockInterview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
     const updates = req.body;
 
@@ -164,7 +164,7 @@ export const updateMockInterview = async (req: Request, res: Response): Promise<
 // Delete mock interview
 export const deleteMockInterview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
 
     const interview = await MockInterview.findOneAndDelete({ _id: id, sessionId });
@@ -187,7 +187,7 @@ export const deleteMockInterview = async (req: Request, res: Response): Promise<
 // Start a mock interview session
 export const startMockInterview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
 
     const interview = await MockInterview.findOneAndUpdate(
@@ -214,7 +214,7 @@ export const startMockInterview = async (req: Request, res: Response): Promise<v
 // Complete a problem in mock interview
 export const completeProblem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id, problemIndex } = req.params;
     const { timeTaken, score } = req.body;
 
@@ -249,7 +249,7 @@ export const completeProblem = async (req: Request, res: Response): Promise<void
 // Finish mock interview and submit feedback
 export const finishMockInterview = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { id } = req.params;
     const { feedback, performance } = req.body;
 
@@ -289,7 +289,7 @@ export const finishMockInterview = async (req: Request, res: Response): Promise<
 // Get mock interview statistics
 export const getMockInterviewStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
 
     const stats = await MockInterview.aggregate([
       { $match: { sessionId, status: 'completed' } },

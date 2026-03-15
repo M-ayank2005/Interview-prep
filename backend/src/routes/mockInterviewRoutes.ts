@@ -10,8 +10,12 @@ import {
   finishMockInterview,
   getMockInterviewStats,
 } from '../controllers/mockInterviewController';
+import { protect } from '../middleware/auth';
 
 const router = Router();
+
+// Apply protect middleware to all mock interview routes
+router.use(protect);
 
 // GET /api/mock-interviews - Get all mock interviews
 router.get('/', getMockInterviews);

@@ -6,6 +6,7 @@ import mockInterviewRoutes from './mockInterviewRoutes';
 import companyRoutes from './companyRoutes';
 import sessionRoutes from './sessionRoutes';
 import snippetRoutes from './snippetRoutes';
+import authRoutes from './authRoutes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/mock-interviews', mockInterviewRoutes);
 router.use('/companies', companyRoutes);
 router.use('/session', sessionRoutes);
 router.use('/snippets', snippetRoutes);
+router.use('/auth', authRoutes);
 
 export default router;

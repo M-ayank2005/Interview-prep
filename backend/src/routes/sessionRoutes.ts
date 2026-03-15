@@ -8,8 +8,12 @@ import {
   exportData,
   resetProgress,
 } from '../controllers/sessionController';
+import { protect } from '../middleware/auth';
 
 const router = Router();
+
+// Apply protect middleware to all session routes
+router.use(protect);
 
 // GET /api/session - Get session data
 router.get('/', getSession);

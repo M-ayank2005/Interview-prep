@@ -6,12 +6,13 @@ import logger from '../utils/logger';
 // Get user session data
 export const getSession = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
 
-    const session = await UserSession.findOne({ sessionId });
+    let session = await UserSession.findOne({ sessionId });
 
     if (!session) {
-      throw new AppError('Session not found', 404);
+      // Create session if it doesn't exist for the user
+      session = await UserSession.create({ sessionId, lastActiveDate: new Date() });
     }
 
     res.json({
@@ -28,7 +29,7 @@ export const getSession = async (req: Request, res: Response): Promise<void> => 
 // Update user session settings
 export const updateSession = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const updates = req.body;
 
     // Prevent updating sensitive fields
@@ -62,7 +63,7 @@ export const updateSession = async (req: Request, res: Response): Promise<void> 
 // Update settings
 export const updateSettings = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { settings } = req.body;
 
     const session = await UserSession.findOneAndUpdate(
@@ -89,7 +90,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
 // Set interview target
 export const setTarget = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { targetCompany, targetRole, interviewDate, dailyGoal } = req.body;
 
     const updates: Record<string, unknown> = {};
@@ -136,9 +137,13 @@ export const setTarget = async (req: Request, res: Response): Promise<void> => {
 // Get dashboard data
 export const getDashboard = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
 
-    const session = await UserSession.findOne({ sessionId });
+    let session = await UserSession.findOne({ sessionId });
+
+    if (!session) {
+      session = await UserSession.create({ sessionId, lastActiveDate: new Date() });
+    }
 
     if (!session) {
       throw new AppError('Session not found', 404);
@@ -181,7 +186,7 @@ export const getDashboard = async (req: Request, res: Response): Promise<void> =
 // Export user data
 export const exportData = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
 
     // Import models dynamically to avoid circular dependencies
     const { ProblemProgress, StudyPlanEnrollment, MockInterview, DailyActivity, CodeSnippet } = await import('../models');
@@ -218,7 +223,7 @@ export const exportData = async (req: Request, res: Response): Promise<void> => 
 // Reset progress (dangerous action)
 export const resetProgress = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { sessionId } = req;
+    const sessionId = req.user!.id;
     const { confirm } = req.body;
 
     if (confirm !== 'RESET_ALL_PROGRESS') {
