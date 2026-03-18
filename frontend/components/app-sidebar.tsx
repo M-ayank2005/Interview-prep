@@ -43,8 +43,10 @@ const learningNavItems = [
 
 const secondaryNavItems = [
   { title: "Cheat Sheets", url: "/cheat-sheets", icon: Sparkles },
+  { title: "System Design", url: "/system-design", icon: LayoutDashboard },
   { title: "Complexity", url: "/complexity", icon: BarChart3 },
   { title: "Interview Tips", url: "/tips", icon: Star },
+  { title: "AI Mock Interview", url: "/mock-interview", icon: Code2 },
   { title: "Mock Interviews", url: "/scheduler", icon: Users },
 ];
 

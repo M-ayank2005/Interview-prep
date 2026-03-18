@@ -23,7 +23,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { useLocalRunner } from '@/hooks/use-local-runner';
+import { useDockerRunner } from '@/hooks/use-docker-runner';
 import { PROBLEMS, getProblemBySlug } from '@/lib/problems-data';
 import { 
   Play, 
@@ -69,13 +69,11 @@ const LANGUAGES = {
 export default function ProblemWorkspace() {
   const params = useParams();
   const router = useRouter();
-   const { isConnected, isChecking, runCode, checkLanguageInstalled, languageAvailability } = useLocalRunner();
+  const { isRunning, runCode } = useDockerRunner();
   const [problem, setProblem] = useState<any>(null);
   const [language, setLanguage] = useState('python');
   const [code, setCode] = useState('');
   const [output, setOutput] = useState<any>(null);
-  const [isRunning, setIsRunning] = useState(false);
-   const [isLanguageChecking, setIsLanguageChecking] = useState(false);
   const editorRef = useRef<any>(null);
 
   useEffect(() => {
@@ -102,79 +100,22 @@ export default function ProblemWorkspace() {
     }
   }, [language, problem]);
 
-   useEffect(() => {
-      let cancelled = false;
-
-      const checkLanguage = async () => {
-         if (!isConnected) return;
-
-         setIsLanguageChecking(true);
-         try {
-            await checkLanguageInstalled(language, true);
-         } finally {
-            if (!cancelled) {
-               setIsLanguageChecking(false);
-            }
-         }
-      };
-
-      checkLanguage();
-
-      return () => {
-         cancelled = true;
-      };
-   }, [language, isConnected]);
-
   const handleRun = async () => {
-    if (!isConnected) {
-        toast.error("Local Runner not connected");
-        return;
-    }
-
-      const selectedLanguage = LANGUAGES[language as keyof typeof LANGUAGES]?.name || language;
-      const availability = await checkLanguageInstalled(language, true);
-      if (!availability.installed) {
-         const installMessage = availability.installPrompt || `${selectedLanguage} is not installed on your system.`;
-         setOutput({
-            error: installMessage,
-            installCommand: availability.installCommand,
-            docsUrl: availability.docsUrl,
-         });
-         toast.error(`${selectedLanguage} is not installed locally`);
-         return;
-      }
-
-    setIsRunning(true);
     setOutput(null);
     try {
         const res = await runCode(language, code);
         setOutput(res);
         if (res.exitCode === 0) {
-            toast.success("Code executed successfully");
+            toast.success(`Success (${res.executionTimeMs}ms)`);
         } else {
-            toast.error("Execution failed");
+            toast.error("Execution failed or timed out.");
         }
     } catch (e) {
         toast.error("Failed to run code");
-    } finally {
-        setIsRunning(false);
     }
   };
 
-  const downloadRunner = () => {
-     // Create a blob and download the python script
-     const link = document.createElement('a');
-     link.href = '/local-runner.py';
-     link.download = 'local-runner.py';
-     document.body.appendChild(link);
-     link.click();
-     document.body.removeChild(link);
-  };
-
   if (!problem) return <div className="p-8">Loading problem...</div>;
-
-   const selectedLanguageStatus = languageAvailability[language];
-   const selectedLanguageName = LANGUAGES[language as keyof typeof LANGUAGES]?.name || language;
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-background overflow-hidden">
@@ -194,20 +135,7 @@ export default function ProblemWorkspace() {
         </div>
         
         <div className="flex items-center gap-2">
-           {!isConnected && !isChecking && (
-              <Button variant="destructive" size="sm" onClick={downloadRunner} className="animate-pulse">
-                 <Download className="w-4 h-4 mr-2" />
-                 Download Runner Agent
-              </Button>
-           )}
-           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
-               isConnected ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
-           }`}>
-               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-               {isConnected ? 'Connected to Localhost' : 'Agent Disconnected'}
-           </div>
-           
-           <Button variant="outline" size="sm" onClick={handleRun} disabled={isRunning || !isConnected}>
+           <Button variant="outline" size="sm" onClick={handleRun} disabled={isRunning}>
                {isRunning ? <RotateCcw className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
                Run Code
            </Button>
@@ -290,7 +218,7 @@ export default function ProblemWorkspace() {
                      <div className="h-full flex flex-col">
                         <div className="h-10 border-b border-border flex items-center justify-between px-4 bg-muted/10">
                            <div className="flex items-center gap-3">
-                           <Select value={language} onValueChange={setLanguage}>
+                            <Select value={language} onValueChange={setLanguage}>
                               <SelectTrigger className="w-36 h-8 text-xs border-none bg-transparent focus:ring-0">
                                  <SelectValue />
                               </SelectTrigger>
@@ -300,17 +228,6 @@ export default function ProblemWorkspace() {
                                  ))}
                               </SelectContent>
                            </Select>
-                           {isConnected && (
-                             <div className="text-[11px]">
-                               {isLanguageChecking ? (
-                                 <span className="text-muted-foreground">Checking {selectedLanguageName}...</span>
-                               ) : selectedLanguageStatus?.installed ? (
-                                 <span className="text-green-600">Installed: {selectedLanguageStatus.version || selectedLanguageName}</span>
-                               ) : (
-                                 <span className="text-red-500">Not installed on your system</span>
-                               )}
-                             </div>
-                           )}
                            </div>
                            
                            <div className="flex items-center gap-2">
@@ -385,22 +302,9 @@ export default function ProblemWorkspace() {
                               {output.error && (
                                  <div className="bg-red-900/20 border border-red-900 p-3 rounded text-red-300">
                                     <div className="font-bold flex items-center gap-2 mb-1">
-                                        <AlertCircle className="w-4 h-4" /> Execution Error
+                                        <AlertCircle className="w-4 h-4" /> Execution Result / Error
                                     </div>
-                                                      <div>{output.error}</div>
-                                                      {output.installCommand && (
-                                                         <div className="mt-2">
-                                                            <div className="text-xs text-muted-foreground mb-1">Install command:</div>
-                                                            <pre className="whitespace-pre-wrap text-amber-300">{output.installCommand}</pre>
-                                                         </div>
-                                                      )}
-                                                      {output.docsUrl && (
-                                                         <div className="mt-2">
-                                                            <a href={output.docsUrl} target="_blank" rel="noreferrer" className="text-blue-300 underline">
-                                                               Open installation guide
-                                                            </a>
-                                                         </div>
-                                                      )}
+                                    <div>{output.error}</div>
                                  </div>
                               )}
                            </div>

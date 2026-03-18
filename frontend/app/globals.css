@@ -123,3 +123,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fix Excalidraw SVG icon scaling conflicts with Tailwind */
+.excalidraw svg {
+  max-width: unset !important;
+  height: unset !important;
+  width: unset;
+}

@@ -74,7 +74,11 @@ function ProblemsPageContent() {
     // Check URL params
     const companyParam = searchParams.get('company');
     if (companyParam) {
-      setCompanyFilter(companyParam);
+      // url param is often a slug (e.g. 'google'). Find the matching structured Company name.
+      const matchedCompany = COMPANIES.find(c => c.toLowerCase() === companyParam.toLowerCase());
+      if (matchedCompany) {
+        setCompanyFilter(matchedCompany);
+      }
     }
   }, [searchParams]);
 
