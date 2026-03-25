@@ -23,8 +23,6 @@ const mainNavItems = [
 	{ href: '/problems', label: 'Problems' },
 ];
 
-const allNavItems = [...mainNavItems];
-
 export function Navigation() {
 	const pathname = usePathname();
 	const { user, logout, isLoading } = useAuth();
@@ -44,8 +42,8 @@ export function Navigation() {
 					  </Link>
           </div>
 
-					{/* Desktop Navigation */}
-					<div className='hidden xl:flex items-center gap-1 flex-1 px-4'>
+					{/* Desktop Navigation — visible on md+ (768px) */}
+					<div className='hidden md:flex items-center gap-1 flex-1 px-4'>
 						{mainNavItems.map((item) => {
 							const isActive = pathname === item.href;
 							return (
@@ -89,13 +87,22 @@ export function Navigation() {
 											</div>
 										</DropdownMenuLabel>
 										<DropdownMenuSeparator />
+										{/* Show nav links inside dropdown on small screens */}
+										<div className="md:hidden">
+											{mainNavItems.map((item) => (
+												<DropdownMenuItem key={item.href} asChild>
+													<Link href={item.href}>{item.label}</Link>
+												</DropdownMenuItem>
+											))}
+											<DropdownMenuSeparator />
+										</div>
 										<DropdownMenuItem onClick={() => logout()}>
 											Log out
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
 							) : (
-								<div className="hidden xl:flex items-center gap-2 ml-2">
+								<div className="flex items-center gap-2 ml-2">
 									<Button variant="outline" size="sm" asChild>
 										<Link href="/login">Log in</Link>
 									</Button>
