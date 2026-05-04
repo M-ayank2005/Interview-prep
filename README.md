@@ -1,219 +1,158 @@
-# Interview Prep
+# Interview Prep Platform
 
-A production-grade interview preparation platform for SDE roles. Built with Next.js 16, React 19, Node.js/Express, and MongoDB.
+A production-grade, AI-powered interview preparation platform for SDE roles. Built with Next.js 15+, React 19, Node.js/Express, MongoDB, Docker, WebRTC, and Google Gemini AI.
 
 ## 🚀 Features
 
-### Problem Tracker
-- **150+ curated problems** across 12 categories
-- Advanced filtering by category, difficulty, and completion status
-- Notes and hints for each problem
-- Spaced repetition system for optimal review scheduling
+### 🤖 AI Mock Interviews
+- **Live AI Interviewer**: Conduct real-time mock interviews with an AI powered by Gemini Flash models.
+- **WebRTC Integration**: Video and audio capabilities for a realistic interview environment.
+- **Real-time Code Evaluation**: The AI monitors your code snapshots during the interview.
+- **Comprehensive Feedback**: Structured evaluation covering Problem Solving, Code Quality, Communication, and Complexity Analysis.
 
-### Study Plans
-- **DSA Fundamentals** - 4 weeks for beginners
-- **Blind 75** - Classic interview prep list
-- **NeetCode 150** - Extended problem set
-- **FAANG Interview Prep** - Advanced preparation
-- **Advanced DP Mastery** - Deep dive into dynamic programming
+### 💻 Integrated Development Environment (IDE)
+- **Monaco Editor**: VS Code-like coding experience in the browser.
+- **Sandboxed Execution**: Safe, isolated code execution using Docker containers for multiple languages (Python, JavaScript, C++).
+- **AI Code Assistant**: Get hints, explanations, and optimization suggestions powered by Gemini AI without leaving the editor.
 
-### Company-Specific Prep
-- Interview patterns for Google, Amazon, Meta, Microsoft, Uber, Apple
-- Difficulty distribution insights
-- Round-by-round breakdown
-- Company-specific tips
+### 📐 System Design Whiteboard
+- **Excalidraw Integration**: Built-in interactive whiteboard for High-Level (HLD) and Low-Level Design (LLD).
+- **RESHADED Framework**: Structured approach guide for system design interviews.
+- **Curated Topics**: Common HLD and LLD questions with key discussion points and expected patterns.
 
-### Cheat Sheets
-- Data structures complexity reference
-- Algorithm templates with code
-- Problem pattern indicators
-- Interview tips and common mistakes
+### 📚 Problem Tracker & Study Plans
+- **Curated Problems**: Advanced filtering by category, difficulty, and completion status.
+- **Spaced Repetition System**: Optimal review scheduling to retain algorithmic concepts.
+- **Targeted Study Plans**: DSA Fundamentals, Blind 75, NeetCode 150, FAANG Prep, and more.
+- **Company-Specific Prep**: Interview patterns for top tech companies.
 
-### Mock Interviews
-- Schedule and track mock interviews
-- Performance tracking
-- Notes and feedback system
-
-### Analytics Dashboard
-- Progress tracking with streaks
-- Daily goals and activity
-- Category-wise completion rates
-- Visual analytics
+### 📈 Analytics Dashboard
+- Progress tracking with streaks and daily goals.
+- Category-wise completion rates and visual analytics.
 
 ## 📁 Project Structure
 
+The project follows a microservices-inspired architecture to handle real-time and heavy processing workloads separately from the main API.
+
 ```
-dsa-problems-website/
-├── frontend/                 # Next.js frontend
-│   ├── app/                  # App router pages
-│   │   ├── dashboard/        # Main dashboard
-│   │   ├── problems/         # Problem tracker
-│   │   ├── patterns/         # DSA patterns
-│   │   ├── study-plans/      # Study plans
-│   │   ├── companies/        # Company prep
-│   │   ├── cheat-sheets/     # Quick reference
-│   │   ├── scheduler/        # Mock interviews
-│   │   ├── complexity/       # Time/space complexity
-│   │   └── tips/             # Interview tips
-│   ├── components/           # React components
-│   │   └── ui/               # UI component library
-│   └── lib/                  # Utilities and API client
+Interview-prep/
+├── frontend/                 # Next.js Frontend (React 19, Tailwind CSS 4)
+│   ├── app/                  # App router pages (dashboard, problems, mock-interview, etc.)
+│   ├── components/           # React components (Monaco editor, WebRTC room, Excalidraw)
+│   ├── hooks/                # Custom React hooks (use-docker-runner, etc.)
+│   └── lib/                  # Utilities and API clients
 │
-├── backend/                  # Node.js/Express backend
+├── backend/                  # Main Node.js/Express API Server
 │   ├── src/
-│   │   ├── config/           # Configuration
-│   │   ├── controllers/      # Route handlers
-│   │   ├── middleware/       # Express middleware
-│   │   ├── models/           # MongoDB models
+│   │   ├── controllers/      # Route handlers (Auth, Problems, Progress, etc.)
+│   │   ├── models/           # MongoDB models (Mongoose)
 │   │   ├── routes/           # API routes
-│   │   ├── scripts/          # Database seeding
-│   │   └── utils/            # Utilities
-│   └── dist/                 # Compiled JavaScript
+│   │   └── middleware/       # Auth (JWT/Cookies) and validation
+│   └── package.json
+│
+└── execution-service/        # Heavy-workload Microservice (Docker, AI, WebSockets)
+    ├── src/
+    │   ├── ai/               # Gemini AI integration (Interviewer, CodeAssist)
+    │   ├── docker/           # Docker container management for code execution
+    │   └── index.ts          # Express server with Socket.io and WebRTC signaling
+    ├── .env.example
+    └── package.json
 ```
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Next.js 16** - React framework with App Router
-- **React 19** - UI library
-- **Tailwind CSS 4** - Utility-first styling
-- **Radix UI** - Accessible component primitives
-- **TanStack Query** - Data fetching and caching
-- **Recharts** - Analytics charts
-- **Framer Motion** - Animations
+- **Framework**: Next.js (App Router), React 19
+- **Styling**: Tailwind CSS 4, Radix UI, Shadcn UI
+- **State/Fetching**: TanStack Query
+- **Editor & Canvas**: Monaco Editor, Excalidraw
+- **Communication**: Socket.io-client, WebRTC
 
-### Backend
-- **Node.js + Express** - Web server
-- **TypeScript** - Type safety
-- **MongoDB + Mongoose** - Database
-- **Winston** - Logging
-- **Helmet** - Security headers
-- **Express Rate Limit** - API rate limiting
+### Backend (Main API)
+- **Server**: Node.js, Express, TypeScript
+- **Database**: MongoDB, Mongoose
+- **Authentication**: JWT, HttpOnly Cookies
+- **Security**: Helmet, Express Rate Limit
+
+### Execution & AI Service
+- **Server**: Node.js, Express, Socket.io
+- **Execution Engine**: Docker SDK
+- **AI**: Google Gen AI SDK (Gemini 1.5/2.0 Flash)
 
 ## 🚦 Getting Started
 
 ### Prerequisites
 - Node.js 18+
+- Docker Desktop (must be running for code execution)
 - MongoDB (local or Atlas)
-- pnpm (for frontend) or npm
+- pnpm (for frontend) and npm (for backend services)
+- Google Gemini API Key
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd dsa-problems-website
+   cd Interview-prep
    ```
 
-2. **Install frontend dependencies**
+2. **Setup Frontend**
    ```bash
    cd frontend
    pnpm install
    ```
 
-3. **Install backend dependencies**
+3. **Setup Main Backend**
    ```bash
    cd ../backend
    npm install
    ```
-
-4. **Configure environment variables**
-   
    Create `backend/.env`:
    ```env
-   PORT=5000
+   PORT=8000
    MONGODB_URI=mongodb://localhost:27017/interview-prep
+   JWT_SECRET=your_jwt_secret_key
+   FRONTEND_URL=http://localhost:3000
    NODE_ENV=development
    ```
 
-5. **Start MongoDB** (if running locally)
+4. **Setup Execution Service**
    ```bash
-   mongod
+   cd ../execution-service
+   npm install
+   ```
+   Create `execution-service/.env`:
+   ```env
+   PORT=5001
+   FRONTEND_URL=http://localhost:3000
+   GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_MODEL=gemini-1.5-flash
    ```
 
-6. **Seed the database**
-   ```bash
-   cd backend
-   npm run seed
-   ```
+5. **Start all services** (in separate terminals)
+   - **Main Backend**: `cd backend && npm start` (or `npm run dev`)
+   - **Execution Service**: `cd execution-service && npm run dev`
+   - **Frontend**: `cd frontend && pnpm dev`
 
-7. **Start the backend**
-   ```bash
-   npm run dev
-   ```
+6. **Open the app**
+   - Navigate to http://localhost:3000
 
-8. **Start the frontend** (new terminal)
-   ```bash
-   cd frontend
-   pnpm dev
-   ```
+## 📡 API Architecture
 
-9. **Open the app**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
-
-## 📡 API Endpoints
-
-### Problems
-- `GET /api/problems` - List all problems
-- `GET /api/problems/:id` - Get problem by ID
-- `GET /api/problems/category/:category` - Get problems by category
-
-### Progress
-- `GET /api/progress` - Get user's progress
-- `PUT /api/progress/:problemId` - Update problem progress
-- `GET /api/progress/analytics` - Get analytics data
-- `GET /api/progress/review/due` - Get problems due for review
-
-### Study Plans
-- `GET /api/study-plans` - List study plans
-- `POST /api/study-plans/:id/enroll` - Enroll in a plan
-- `PUT /api/study-plans/:id/progress` - Update progress
-
-### Mock Interviews
-- `GET /api/mock-interviews` - List scheduled interviews
-- `POST /api/mock-interviews` - Schedule new interview
-- `PUT /api/mock-interviews/:id` - Update interview
-
-### Companies
-- `GET /api/companies` - List company patterns
-- `GET /api/companies/:slug` - Get company details
-
-### Code Snippets
-- `GET /api/snippets` - List user's snippets
-- `POST /api/snippets` - Create new snippet
-- `PUT /api/snippets/:id` - Update snippet
-- `DELETE /api/snippets/:id` - Delete snippet
+- **Frontend** talks to **Main Backend** (`:8000`) for data persistence (auth, progress, problems).
+- **Frontend** talks to **Execution Service** (`:5001`) via REST for code execution (`/api/execute`) and AI Code Assist (`/api/code-assist`).
+- **Frontend** connects to **Execution Service** via WebSockets (`Socket.io`) for real-time AI Mock Interviews and WebRTC signaling.
 
 ## 🔐 Authentication
 
-The app uses session-based anonymous authentication:
-- A unique session ID is generated on first visit
-- Stored in localStorage
-- Sent with all API requests via `x-session-id` header
-- No login required - data persists per browser
-
-## 📊 Spaced Repetition
-
-The SM-2 algorithm is used for optimal problem review scheduling:
-- Confidence ratings (0-5) adjust review intervals
-- Higher confidence = longer intervals
-- Automatically suggests problems to review
-
-## 🎨 Theming
-
-- Dark mode by default
-- Consistent color palette using CSS variables
-- Responsive design for all screen sizes
+The application uses secure, HttpOnly cookie-based JWT authentication. 
+- Login/Signup endpoints generate JWTs stored securely in the browser.
+- Protected routes on both the frontend and backend ensure data privacy.
 
 ## 📝 License
 
 MIT
 
-## 🤝 Contributing
-
-Contributions are welcome! Please read the contributing guidelines first.
-
 ---
 
-Built with ❤️ for interview success
+Built with ❤️ for interview success.
